@@ -36,8 +36,6 @@ void setup() {
 
     AudioMemory(400);   // Allocate memory for Audio connections
 
-    AudioNoInterrupts();
-
     configurePins();
     configureAudioAdaptor();
 
@@ -52,8 +50,6 @@ void setup() {
     initializeDryWetSwitch();
 
     configureISRs();
-
-    AudioInterrupts();
 }
 
 
@@ -209,7 +205,6 @@ void ISRReverbBypass()
 {
     Serial.println("BYPASS REVERB");
 
-    AudioNoInterrupts();
     eReverb.isOn = !(eReverb.isOn);
 
     if (eReverb.isOn)
@@ -228,6 +223,4 @@ void ISRReverbBypass()
         eReverb.pMixerInL->gain(0, 0.0);    // Turn Filter input OFF
         eReverb.pMixerInR->gain(0, 0.0);
     }
-
-    AudioInterrupts();
 }

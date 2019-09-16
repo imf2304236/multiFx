@@ -1,6 +1,11 @@
 #ifndef MULTIFX_AUDIOSYSTEM_H
 #define MULTIFX_AUDIOSYSTEM_H
 
+#include <Audio.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SerialFlash.h>
+
 // GUItool: begin automatically generated code
 AudioInputI2S            audioIn;        //xy=134.111083984375,1026.8887939453125
 AudioAmplifier           gainInL;        //xy=292.111083984375,1000.8887939453125

@@ -1,10 +1,6 @@
-#include <Audio.h>
-#include "AudioSystem.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <SerialFlash.h>
+#include "AudioSystem.h"
 
 #define GAININ_PIN  16
 #define FILTER_PIN  17

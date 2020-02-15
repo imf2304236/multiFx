@@ -39,6 +39,8 @@ void setup() {
     configurePins();
     configureAudioAdaptor();
 
+    setGainIn(vGainIn);
+
     for (int i = 0; i != 4; ++i)
     {
         mixerFxL.gain(i, 0.0);
@@ -90,9 +92,6 @@ void configureAudioAdaptor(void)
     sgtl5000.enable();
     sgtl5000.inputSelect(AUDIO_INPUT_LINEIN);
     sgtl5000.volume(vVolume);
-
-    gainInL.gain(vGainIn);
-    gainInR.gain(vGainIn);
 }
 
 void configureFilter(void)

@@ -141,19 +141,16 @@ void configureReverb(void)
     mixerReverbPostL.gain(3, 0.0);
     mixerReverbPostR.gain(3, 0.0);
 
-    mixerReverbInL.gain(0, 1.0);
-    mixerReverbInR.gain(0, 1.0);
-    mixerReverbInL.gain(1, 0.0);
-    mixerReverbInR.gain(1, 0.0);
-    mixerReverbInL.gain(2, 0.0);
-    mixerReverbInR.gain(2, 0.0);
-    mixerReverbInL.gain(3, 0.0);
-    mixerReverbInR.gain(3, 0.0);
-
     setDryWetBalance(&eReverb, vWet);
 
-    mixerFxL.gain(eReverb.index, 1.0);
-    mixerFxR.gain(eReverb.index, 1.0);
+    if (eReverb.isOn)
+    {
+        mixerReverbInL.gain(0, 1.0);
+        mixerReverbInR.gain(0, 1.0);
+
+        mixerFxL.gain(eReverb.index, 1.0);
+        mixerFxR.gain(eReverb.index, 1.0);
+    }
 }
 
 void initializeDryWetSwitch(void)

@@ -223,18 +223,28 @@ void ISRReverbBypass()
 
     eReverb.isOn = !(eReverb.isOn);
 
-    if (eReverb.isOn)
+    if (eReverb.isOn)   // Reverb Switched ON
     {
         mixerMasterL.gain(0, 0.0);  // Turn Dry mix OFF
         mixerMasterR.gain(0, 0.0);
+        mixerMasterL.gain(1, 1.0);  // Turn Wet mix ON
+        mixerMasterR.gain(1, 1.0);
+
+        mixerFxL.gain(eReverb.index, 1.0);
+        mixerFxR.gain(eReverb.index, 1.0);
 
         eReverb.pMixerInL->gain(0, 1.0);    // Turn Filter input ON
         eReverb.pMixerInR->gain(0, 1.0);
     }
-    else
+    else   // Reverb Switched OFF
     {
         mixerMasterL.gain(0, 1.0);  // Turn Dry mix ON
         mixerMasterR.gain(0, 1.0);
+        mixerMasterL.gain(1, 0.0);  // Turn Wet mix OFF
+        mixerMasterR.gain(1, 0.0);
+
+        mixerFxL.gain(eReverb.index, 0.0);
+        mixerFxR.gain(eReverb.index, 0.0);
 
         eReverb.pMixerInL->gain(0, 0.0);    // Turn Filter input OFF
         eReverb.pMixerInR->gain(0, 0.0);

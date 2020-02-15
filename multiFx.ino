@@ -67,8 +67,7 @@ void loop()
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
 
-        if (eReverb.isOn)
-            setDryWetBalance(&eReverb, vWet);
+        setDryWetBalance(&eReverb, vWet);
 
         sgtl5000.volume(vVolume);
 

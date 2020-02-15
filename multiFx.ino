@@ -43,6 +43,9 @@ void setup() {
 
     for (int i = 0; i != 4; ++i)
     {
+        mixerMasterL.gain(i, 0.0);
+        mixerMasterR.gain(i, 0.0);
+
         mixerFxL.gain(i, 0.0);
         mixerFxR.gain(i, 0.0);
     }
@@ -120,10 +123,23 @@ void configureReverb(void)
     eReverb.pMixerOutL = &mixerReverbOutL;
     eReverb.pMixerOutR = &mixerReverbOutR;
 
+    for (int i = 0; i != 4; ++i)
+    {
+        mixerReverbOutL.gain(i, 0.0);
+        mixerReverbOutR.gain(i, 0.0);
+
+        mixerReverbInL.gain(i, 0.0);
+        mixerReverbInR.gain(i, 0.0);
+    }
+
     mixerReverbPostL.gain(0, 1.0);
     mixerReverbPostR.gain(0, 1.0);
     mixerReverbPostL.gain(1, 1.0);
     mixerReverbPostR.gain(1, 1.0);
+    mixerReverbPostL.gain(2, 0.0);
+    mixerReverbPostR.gain(2, 0.0);
+    mixerReverbPostL.gain(3, 0.0);
+    mixerReverbPostR.gain(3, 0.0);
 
     mixerReverbInL.gain(0, 1.0);
     mixerReverbInR.gain(0, 1.0);
@@ -156,6 +172,11 @@ void initializeDryWetSwitch(void)
         mixerMasterL.gain(1, 0.0);
         mixerMasterR.gain(1, 0.0);
     }
+
+    mixerMasterL.gain(2, 0.0);
+    mixerMasterR.gain(2, 0.0);
+    mixerMasterL.gain(3, 0.0);
+    mixerMasterR.gain(3, 0.0);
 }
 
 void configureISRs(void)

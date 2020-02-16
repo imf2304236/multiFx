@@ -83,6 +83,15 @@ void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR)
     }
 }
 
+void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR, int start, int end)
+{
+    for (int i = start; i != end + 1; ++i)
+    {
+        mixerL.gain(i, 0.0);
+        mixerR.gain(i, 0.0);
+    }
+}
+
 void configurePins(void)
 {
     pinMode(GAININ_PIN, INPUT_PULLDOWN);
@@ -119,13 +128,6 @@ void configureReverb(void)
     reverbL.damping(vReverbDamping);
     reverbR.damping(vReverbDamping);
 
-    eReverb.index = 3;
-    eReverb.isOn = HIGH;
-    eReverb.pMixerInL = &mixerReverbInL;
-    eReverb.pMixerInR = &mixerReverbInR;
-    eReverb.pMixerOutL = &mixerReverbOutL;
-    eReverb.pMixerOutR = &mixerReverbOutR;
-
     zeroInputs(mixerReverbOutL, mixerReverbOutR);
     zeroInputs(mixerReverbInL, mixerReverbInR);
 
@@ -133,10 +135,8 @@ void configureReverb(void)
     mixerReverbPostR.gain(0, 1.0);
     mixerReverbPostL.gain(1, 1.0);
     mixerReverbPostR.gain(1, 1.0);
-    mixerReverbPostL.gain(2, 0.0);
-    mixerReverbPostR.gain(2, 0.0);
-    mixerReverbPostL.gain(3, 0.0);
-    mixerReverbPostR.gain(3, 0.0);
+
+    zeroInputs(mixerReverbPostL, mixerReverbPostR, 2, 3);
 
     setDryWetBalance(&eReverb, vWet);
 

@@ -41,14 +41,8 @@ void setup() {
 
     setGainIn(vGainIn);
 
-    for (int i = 0; i != 4; ++i)
-    {
-        mixerMasterL.gain(i, 0.0);
-        mixerMasterR.gain(i, 0.0);
-
-        mixerFxL.gain(i, 0.0);
-        mixerFxR.gain(i, 0.0);
-    }
+    zeroInputs(mixerMasterL, mixerMasterR);
+    zeroInputs(mixerFxL, mixerFxR);
 
     configureReverb();
 
@@ -77,6 +71,15 @@ void loop()
         printParameters();
 
         msec = 0;
+    }
+}
+
+void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR)
+{
+    for (int i = 0; i != 4; ++i)
+    {
+        mixerL.gain(i, 0.0);
+        mixerR.gain(i, 0.0);
     }
 }
 
@@ -123,14 +126,8 @@ void configureReverb(void)
     eReverb.pMixerOutL = &mixerReverbOutL;
     eReverb.pMixerOutR = &mixerReverbOutR;
 
-    for (int i = 0; i != 4; ++i)
-    {
-        mixerReverbOutL.gain(i, 0.0);
-        mixerReverbOutR.gain(i, 0.0);
-
-        mixerReverbInL.gain(i, 0.0);
-        mixerReverbInR.gain(i, 0.0);
-    }
+    zeroInputs(mixerReverbOutL, mixerReverbOutR);
+    zeroInputs(mixerReverbInL, mixerReverbInR);
 
     mixerReverbPostL.gain(0, 1.0);
     mixerReverbPostR.gain(0, 1.0);

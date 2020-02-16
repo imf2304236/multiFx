@@ -19,8 +19,8 @@ struct Effect
 } eReverb;
 
 const int kFilterFreqMax = 12000;
-const float kGainInMax = 0.5;
-const float kVolumeMax = 0.8;
+const float kGainInMax = 0.8;
+const float kVolumeMax = 0.5;
 float vGainInReverb = 0.0;
 
 elapsedMillis msec = 0;

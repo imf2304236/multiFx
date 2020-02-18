@@ -176,10 +176,7 @@ void initializeDryWetSwitch(void)
         mixerMasterR.gain(1, 0.0);
     }
 
-    mixerMasterL.gain(2, 0.0);
-    mixerMasterR.gain(2, 0.0);
-    mixerMasterL.gain(3, 0.0);
-    mixerMasterR.gain(3, 0.0);
+    zeroInputs(mixerMasterL, mixerMasterR, 2, 3);
 }
 
 void configureISRs(void)

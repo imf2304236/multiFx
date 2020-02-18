@@ -51,6 +51,7 @@ float vGainIn = kGainInMax;
 float vVolume = kVolumeMax;
 float vWet = 0.5;
 int vFilterFreq = 10000;
+uint8_t numOfFxEnabled = 0;
 
 
 void setup() {
@@ -62,6 +63,8 @@ void setup() {
     configureAudioAdaptor();
 
     setGainIn(vGainIn);
+
+    numOfFxEnabled = uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
 
     zeroInputs(mixerMasterL, mixerMasterR);
     zeroInputs(mixerFxL, mixerFxR);
@@ -241,6 +244,8 @@ void ISRReverbBypass()
 
     if (eReverb.isOn)   // Reverb Switched ON
     {
+        ++numOfFxEnabled;
+
         mixerMasterL.gain(0, OFF);  // Turn Dry mix OFF
         mixerMasterR.gain(0, OFF);
         mixerMasterL.gain(1, ON);  // Turn Wet mix ON
@@ -254,6 +259,8 @@ void ISRReverbBypass()
     }
     else   // Reverb Switched OFF
     {
+        --numOfFxEnabled;
+
         mixerMasterL.gain(0, ON);  // Turn Dry mix ON
         mixerMasterR.gain(0, ON);
         mixerMasterL.gain(1, OFF);  // Turn Wet mix OFF

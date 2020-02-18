@@ -16,7 +16,7 @@ struct Effect
     AudioMixer4 *pMixerInR = NULL;
     AudioMixer4 *pMixerOutL = NULL;
     AudioMixer4 *pMixerOutR = NULL;
-} eReverb;
+};
 
 struct Effect eReverb = {
     3,
@@ -25,6 +25,15 @@ struct Effect eReverb = {
     &mixerReverbInR,
     &mixerReverbOutL,
     &mixerReverbOutR
+};
+
+struct Effect eDelay = {
+    2,
+    HIGH,
+    &mixerDelayInL,
+    &mixerDelayInR,
+    &mixerDelayOutL,
+    &mixerDelayOutR
 };
 
 const int kFilterFreqMax = 12000;

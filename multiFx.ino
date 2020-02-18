@@ -7,6 +7,7 @@
 #define FILTER_PIN  17
 #define WET_PIN     20
 #define VOL_PIN     21
+#define FX3_PIN     30
 #define FX4_PIN     29
 
 // Constants
@@ -25,7 +26,7 @@ struct Effect
 
 struct Effect eReverb = {
     3,
-    HIGH,
+    LOW,
     &mixerReverbInL,
     &mixerReverbInR,
     NULL,
@@ -34,7 +35,7 @@ struct Effect eReverb = {
 
 struct Effect eDelay = {
     2,
-    HIGH,
+    LOW,
     &mixerDelayInL,
     &mixerDelayInR,
     &mixerDelayOutL,
@@ -57,7 +58,7 @@ uint8_t numOfFxEnabled = 0;
 void setup() {
     Serial.begin(9600);
 
-    AudioMemory(400);   // Allocate memory for Audio connections
+    AudioMemory(500);   // Allocate memory for Audio connections
 
     configurePins();
     configureAudioAdaptor();
@@ -65,6 +66,15 @@ void setup() {
     setGainIn(vGainIn);
 
     numOfFxEnabled = uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
+    if (eDelay.isOn)
+    {
+        ++numOfFxEnabled;
+    }
+
+    if (eReverb.isOn)
+    {
+        ++numOfFxEnabled;
+    }
 
     configureMixerMaster();
     configureMixerFx();
@@ -91,7 +101,7 @@ void loop()
 
         sgtl5000.volume(vVolume);
 
-        printParameters();
+        // printParameters();
 
         msec = 0;
     }
@@ -130,6 +140,7 @@ void configurePins(void)
     pinMode(FILTER_PIN, INPUT_PULLDOWN);
     pinMode(WET_PIN, INPUT_PULLDOWN);
     pinMode(VOL_PIN, INPUT_PULLDOWN );
+    pinMode(FX3_PIN, INPUT_PULLUP);
     pinMode(FX4_PIN, INPUT_PULLUP);
 }
 
@@ -185,8 +196,8 @@ void configureReverb(void)
 
 void configureDelay(void)
 {
-    const float vDelayTime = 500;
-    const float vDelayFeedback = 0.25;
+    const float vDelayTime = 187.5;
+    const float vDelayFeedback = 0.8;
 
     mixerDelayOutL.gain(0, ON);
     mixerDelayOutR.gain(0, ON);
@@ -294,17 +305,81 @@ void printParameters(void)
 
 void ISRDelayBypass()
 {
+    eDelay.isOn = !(eDelay.isOn);
 
+    if (eDelay.isOn)
+    {
+        Serial.println("DELAY ON");
+
+        ++numOfFxEnabled;
+
+        setDryWetBalance();
+
+        // Serial Logic
+        if (eReverb.isOn)
+        {
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+        }
+        else
+        {
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+        }
+        
+        mixerDelayInL.gain(0, ON);
+        mixerDelayInR.gain(0, ON);
+
+        // Parallel Logic
+        // mixerFxL.gain(2, ON);
+        // mixerFxR.gain(2, ON);
+        
+        // mixerDelayInL.gain(0, ON);
+        // mixerDelayInR.gain(0, ON);
+    }
+    else    // Delay switched OFF
+    {
+        Serial.println("DELAY OFF");
+
+        --numOfFxEnabled;
+
+        zeroInputs(eDelay);
+
+        // Serial Logic
+        if (eReverb.isOn)
+        {
+            mixerReverbInL.gain(0, ON);
+            mixerReverbInR.gain(0, ON);
+        }
+        else
+        {
+            mixerMasterL.gain(0, ON);
+            mixerMasterR.gain(0, ON);
+        }
+        
+        mixerFxL.gain(2, OFF);
+        mixerFxR.gain(2, OFF);
+        
+        // Parallel Logic
+        // if (!numOfFxEnabled)
+        // {
+        //     mixerMasterL.gain(0, ON);
+        //     mixerMasterR.gain(0, ON);
+        // }
+    }
+    
 }
 
 void ISRReverbBypass()
 {
-    Serial.println("BYPASS REVERB");
-
     eReverb.isOn = !(eReverb.isOn);
 
     if (eReverb.isOn)   // Reverb Switched ON
     {
+        Serial.println("REVERB ON");
+
         ++numOfFxEnabled;
 
         setDryWetBalance();
@@ -312,6 +387,7 @@ void ISRReverbBypass()
         mixerFxL.gain(eReverb.index, ON);
         mixerFxR.gain(eReverb.index, ON);
 
+        // Serial Logic
         if (eDelay.isOn)
         {
             mixerFxL.gain(eDelay.index, OFF);
@@ -326,13 +402,23 @@ void ISRReverbBypass()
             mixerReverbInL.gain(0, ON);
             mixerReverbInR.gain(0, ON);
         }
+
+        // Parallel Logic
+        // mixerFxL.gain(3, ON);
+        // mixerFxR.gain(3, ON);
+        
+        // mixerReverbInL.gain(0, ON);
+        // mixerReverbInR.gain(0, ON);
     }
     else   // Reverb Switched OFF
     {
+        Serial.println("REVERB OFF");
+
         --numOfFxEnabled;
 
         zeroInputs(eReverb);
 
+        // Serial Logic
         if (eDelay.isOn)
         {
             mixerFxL.gain(eDelay.index, ON);
@@ -343,5 +429,12 @@ void ISRReverbBypass()
             mixerMasterL.gain(0, ON);
             mixerMasterR.gain(0, ON);
         }
+
+        // Parallel Logic
+        // if (!numOfFxEnabled)
+        // {
+        //     mixerMasterL.gain(0, ON);
+        //     mixerMasterR.gain(0, ON);
+        // }
     }
 }

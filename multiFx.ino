@@ -159,7 +159,7 @@ void configureReverb(void)
     reverbR.roomsize(vReverbSize);
     reverbL.damping(vReverbDamping);
     reverbR.damping(vReverbDamping);
-    
+
     zeroInputs(mixerReverbPostL, mixerReverbPostR);
     zeroInputs(mixerReverbInL, mixerReverbInR);
 
@@ -241,6 +241,7 @@ void configureMixerMaster(void)
 
 void configureISRs(void)
 {
+    attachInterrupt(digitalPinToInterrupt(FX3_PIN), ISRDelayBypass, FALLING);
     attachInterrupt(digitalPinToInterrupt(FX4_PIN), ISRReverbBypass, FALLING);
 }
 
@@ -289,6 +290,11 @@ void printParameters(void)
 
     Serial.flush();
     Serial.write(12);
+}
+
+void ISRDelayBypass()
+{
+
 }
 
 void ISRReverbBypass()

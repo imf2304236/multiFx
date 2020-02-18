@@ -44,7 +44,6 @@ struct Effect eDelay = {
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
 const float kVolumeMax = 0.5;
-float vGainInReverb = OFF;
 
 elapsedMillis msec = 0;
 const unsigned tUpdate = 1;

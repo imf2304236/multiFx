@@ -16,7 +16,7 @@ struct Effect
     AudioMixer4 *pMixerInR = NULL;
     AudioMixer4 *pMixerOutL = NULL;
     AudioMixer4 *pMixerOutR = NULL;
-} eReverb;
+};
 
 struct Effect eReverb = {
     3,

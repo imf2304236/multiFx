@@ -18,6 +18,15 @@ struct Effect
     AudioMixer4 *pMixerOutR = NULL;
 } eReverb;
 
+struct Effect eReverb = {
+    3,
+    HIGH,
+    &mixerReverbInL,
+    &mixerReverbInR,
+    &mixerReverbOutL,
+    &mixerReverbOutR
+};
+
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
 const float kVolumeMax = 0.5;

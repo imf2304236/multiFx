@@ -66,12 +66,10 @@ void setup() {
 
     numOfFxEnabled = uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
 
-    zeroInputs(mixerMasterL, mixerMasterR);
-    zeroInputs(mixerFxL, mixerFxR);
-
+    configureMixerMaster();
+    configureMixerFx();
     configureReverb();
-
-    initializeDryWetSwitch();
+    configureDelay();
 
     configureISRs();
 }
@@ -89,7 +87,7 @@ void loop()
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
 
-        setDryWetBalance(&eReverb, vWet);
+        setDryWetBalance();
 
         sgtl5000.volume(vVolume);
 
@@ -154,6 +152,7 @@ void configureReverb(void)
     reverbR.damping(vReverbDamping);
 
     zeroInputs(mixerReverbOutL, mixerReverbOutR);
+    zeroInputs(mixerReverbPostL, mixerReverbPostR);
     zeroInputs(mixerReverbInL, mixerReverbInR);
 
     mixerReverbPostL.gain(0, ON);
@@ -161,38 +160,75 @@ void configureReverb(void)
     mixerReverbPostL.gain(1, ON);
     mixerReverbPostR.gain(1, ON);
 
-    zeroInputs(mixerReverbPostL, mixerReverbPostR, 2, 3);
-
-    setDryWetBalance(&eReverb, vWet);
-
     if (eReverb.isOn)
     {
-        mixerReverbInL.gain(0, ON);
-        mixerReverbInR.gain(0, ON);
-
-        mixerFxL.gain(eReverb.index, ON);
-        mixerFxR.gain(eReverb.index, ON);
+        if (eDelay.isOn)
+        {
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+        }
+        else
+        {
+            mixerReverbInL.gain(0, ON);
+            mixerReverbInR.gain(0, ON);
+        }
     }
 }
 
-void initializeDryWetSwitch(void)
+void configureDelay(void)
 {
+    const float vDelayTime = 500;
+    const float vDelayFeedback = 0.25;
+
+    mixerDelayOutL.gain(0, ON);
+    mixerDelayOutR.gain(0, ON);
+    mixerDelayOutL.gain(1, vDelayFeedback);
+    mixerDelayOutR.gain(1, vDelayFeedback);
+    delayL.delay(0, vDelayTime);
+    delayR.delay(0, vDelayTime);
+
+    zeroInputs(mixerDelayInL, mixerDelayInR);
+
+    if (eDelay.isOn)
+    {
+        mixerDelayInL.gain(0, ON);
+        mixerDelayInR.gain(0, ON);
+    }
+}
+
+void configureMixerFx(void)
+{
+    zeroInputs(mixerFxL, mixerFxR);
+    
     if (eReverb.isOn)
     {
-        mixerMasterL.gain(0, OFF);
-        mixerMasterR.gain(0, OFF);
-        mixerMasterL.gain(1, ON);
-        mixerMasterR.gain(1, ON);
+        mixerFxL.gain(3, ON);
+        mixerFxR.gain(3, ON);
     }
     else
     {
+        if (eDelay.isOn)
+        {
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+        }
+    }
+    
+}
+
+void configureMixerMaster(void)
+{
+    zeroInputs(mixerMasterL, mixerMasterR);
+
+    if (numOfFxEnabled == 0)
+    {
         mixerMasterL.gain(0, ON);
         mixerMasterR.gain(0, ON);
-        mixerMasterL.gain(1, OFF);
-        mixerMasterR.gain(1, OFF);
     }
-
-    zeroInputs(mixerMasterL, mixerMasterR, 2, 3);
+    else
+    {
+        setDryWetBalance();
+    }
 }
 
 void configureISRs(void)
@@ -218,6 +254,17 @@ void setDryWetBalance(struct Effect *pEffect, float vWet)
     pEffect->pMixerOutR->gain(0, 1.0 - vWet);
     pEffect->pMixerOutL->gain(1, vWet);
     pEffect->pMixerOutR->gain(1, vWet);
+}
+
+void setDryWetBalance()
+{
+    if (numOfFxEnabled)
+    {
+        mixerMasterL.gain(0, 1.0 - vWet);
+        mixerMasterR.gain(0, 1.0 - vWet);
+        mixerMasterL.gain(1, vWet);
+        mixerMasterR.gain(1, vWet);
+    }
 }
 
 void printParameters(void)

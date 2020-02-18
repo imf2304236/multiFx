@@ -2,11 +2,16 @@
 #include <avr/interrupt.h>
 #include "AudioSystem.h"
 
+// Pins
 #define GAININ_PIN  16
 #define FILTER_PIN  17
 #define WET_PIN     20
 #define VOL_PIN     21
 #define FX4_PIN     29
+
+// Constants
+#define ON  1.0
+#define OFF 0.0
 
 struct Effect
 {
@@ -30,7 +35,7 @@ struct Effect eReverb = {
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
 const float kVolumeMax = 0.5;
-float vGainInReverb = 0.0;
+float vGainInReverb = OFF;
 
 elapsedMillis msec = 0;
 const unsigned tUpdate = 1;
@@ -87,8 +92,8 @@ void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR)
 {
     for (int i = 0; i != 4; ++i)
     {
-        mixerL.gain(i, 0.0);
-        mixerR.gain(i, 0.0);
+        mixerL.gain(i, OFF);
+        mixerR.gain(i, OFF);
     }
 }
 
@@ -96,8 +101,8 @@ void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR, int start, int end)
 {
     for (int i = start; i != end + 1; ++i)
     {
-        mixerL.gain(i, 0.0);
-        mixerR.gain(i, 0.0);
+        mixerL.gain(i, OFF);
+        mixerR.gain(i, OFF);
     }
 }
 
@@ -140,10 +145,10 @@ void configureReverb(void)
     zeroInputs(mixerReverbOutL, mixerReverbOutR);
     zeroInputs(mixerReverbInL, mixerReverbInR);
 
-    mixerReverbPostL.gain(0, 1.0);
-    mixerReverbPostR.gain(0, 1.0);
-    mixerReverbPostL.gain(1, 1.0);
-    mixerReverbPostR.gain(1, 1.0);
+    mixerReverbPostL.gain(0, ON);
+    mixerReverbPostR.gain(0, ON);
+    mixerReverbPostL.gain(1, ON);
+    mixerReverbPostR.gain(1, ON);
 
     zeroInputs(mixerReverbPostL, mixerReverbPostR, 2, 3);
 
@@ -151,11 +156,11 @@ void configureReverb(void)
 
     if (eReverb.isOn)
     {
-        mixerReverbInL.gain(0, 1.0);
-        mixerReverbInR.gain(0, 1.0);
+        mixerReverbInL.gain(0, ON);
+        mixerReverbInR.gain(0, ON);
 
-        mixerFxL.gain(eReverb.index, 1.0);
-        mixerFxR.gain(eReverb.index, 1.0);
+        mixerFxL.gain(eReverb.index, ON);
+        mixerFxR.gain(eReverb.index, ON);
     }
 }
 
@@ -163,17 +168,17 @@ void initializeDryWetSwitch(void)
 {
     if (eReverb.isOn)
     {
-        mixerMasterL.gain(0, 0.0);
-        mixerMasterR.gain(0, 0.0);
-        mixerMasterL.gain(1, 1.0);
-        mixerMasterR.gain(1, 1.0);
+        mixerMasterL.gain(0, OFF);
+        mixerMasterR.gain(0, OFF);
+        mixerMasterL.gain(1, ON);
+        mixerMasterR.gain(1, ON);
     }
     else
     {
-        mixerMasterL.gain(0, 1.0);
-        mixerMasterR.gain(0, 1.0);
-        mixerMasterL.gain(1, 0.0);
-        mixerMasterR.gain(1, 0.0);
+        mixerMasterL.gain(0, ON);
+        mixerMasterR.gain(0, ON);
+        mixerMasterL.gain(1, OFF);
+        mixerMasterR.gain(1, OFF);
     }
 
     zeroInputs(mixerMasterL, mixerMasterR, 2, 3);
@@ -228,28 +233,28 @@ void ISRReverbBypass()
 
     if (eReverb.isOn)   // Reverb Switched ON
     {
-        mixerMasterL.gain(0, 0.0);  // Turn Dry mix OFF
-        mixerMasterR.gain(0, 0.0);
-        mixerMasterL.gain(1, 1.0);  // Turn Wet mix ON
-        mixerMasterR.gain(1, 1.0);
+        mixerMasterL.gain(0, OFF);  // Turn Dry mix OFF
+        mixerMasterR.gain(0, OFF);
+        mixerMasterL.gain(1, ON);  // Turn Wet mix ON
+        mixerMasterR.gain(1, ON);
 
-        mixerFxL.gain(eReverb.index, 1.0);
-        mixerFxR.gain(eReverb.index, 1.0);
+        mixerFxL.gain(eReverb.index, ON);
+        mixerFxR.gain(eReverb.index, ON);
 
-        eReverb.pMixerInL->gain(0, 1.0);    // Turn Filter input ON
-        eReverb.pMixerInR->gain(0, 1.0);
+        eReverb.pMixerInL->gain(0, ON);    // Turn Filter input ON
+        eReverb.pMixerInR->gain(0, ON);
     }
     else   // Reverb Switched OFF
     {
-        mixerMasterL.gain(0, 1.0);  // Turn Dry mix ON
-        mixerMasterR.gain(0, 1.0);
-        mixerMasterL.gain(1, 0.0);  // Turn Wet mix OFF
-        mixerMasterR.gain(1, 0.0);
+        mixerMasterL.gain(0, ON);  // Turn Dry mix ON
+        mixerMasterR.gain(0, ON);
+        mixerMasterL.gain(1, OFF);  // Turn Wet mix OFF
+        mixerMasterR.gain(1, OFF);
 
-        mixerFxL.gain(eReverb.index, 0.0);
-        mixerFxR.gain(eReverb.index, 0.0);
+        mixerFxL.gain(eReverb.index, OFF);
+        mixerFxR.gain(eReverb.index, OFF);
 
-        eReverb.pMixerInL->gain(0, 0.0);    // Turn Filter input OFF
-        eReverb.pMixerInR->gain(0, 0.0);
+        eReverb.pMixerInL->gain(0, OFF);    // Turn Filter input OFF
+        eReverb.pMixerInR->gain(0, OFF);
     }
 }

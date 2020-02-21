@@ -66,15 +66,6 @@ void setup() {
     setGainIn(vGainIn);
 
     numOfFxEnabled = uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
-    if (eDelay.isOn)
-    {
-        ++numOfFxEnabled;
-    }
-
-    if (eReverb.isOn)
-    {
-        ++numOfFxEnabled;
-    }
 
     configureMixerMaster();
     configureMixerFx();

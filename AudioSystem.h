@@ -21,10 +21,8 @@ AudioEffectDelay         delayL;         //xy=898.5714111328125,255.714294433593
 AudioMixer4              mixerDelayOutL;         //xy=931.4284057617188,115.71427917480469
 AudioMixer4              mixerReverbInL; //xy=1016.2860107421875,477.00006103515625
 AudioMixer4              mixerReverbInR; //xy=1066.0001220703125,1150.4285888671875
-AudioEffectFreeverbStereo reverbL;        //xy=1180.5714111328125,473.5715026855469
-AudioEffectFreeverbStereo reverbR;        //xy=1226.2857666015625,1151.857177734375
-AudioMixer4              mixerReverbPostL; //xy=1386.714599609375,500.4286193847656
-AudioMixer4              mixerReverbPostR; //xy=1411.5712890625,1153.428466796875
+AudioEffectFreeverb      reverbL;      //xy=1182.5000610351562,548.75
+AudioEffectFreeverb      reverbR;      //xy=1226.25,1078.75
 AudioMixer4              mixerFxL;       //xy=1570.57177734375,480.8572082519531
 AudioMixer4              mixerFxR;       //xy=1574.2857666015625,829.1427001953125
 AudioMixer4              mixerMasterL;   //xy=1768.5716552734375,615.0000610351562
@@ -52,16 +50,12 @@ AudioConnection          patchCord19(mixerDelayOutL, 0, mixerFxL, 2);
 AudioConnection          patchCord20(mixerDelayOutL, 0, mixerReverbInL, 3);
 AudioConnection          patchCord21(mixerReverbInL, reverbL);
 AudioConnection          patchCord22(mixerReverbInR, reverbR);
-AudioConnection          patchCord23(reverbL, 0, mixerReverbPostR, 0);
-AudioConnection          patchCord24(reverbL, 1, mixerReverbPostL, 0);
-AudioConnection          patchCord25(reverbR, 0, mixerReverbPostR, 1);
-AudioConnection          patchCord26(reverbR, 1, mixerReverbPostL, 1);
-AudioConnection          patchCord27(mixerReverbPostL, 0, mixerFxL, 3);
-AudioConnection          patchCord28(mixerReverbPostR, 0, mixerFxR, 3);
-AudioConnection          patchCord29(mixerFxL, 0, mixerMasterL, 1);
-AudioConnection          patchCord30(mixerFxR, 0, mixerMasterR, 1);
-AudioConnection          patchCord31(mixerMasterL, 0, audioOut, 0);
-AudioConnection          patchCord32(mixerMasterR, 0, audioOut, 1);
+AudioConnection          patchCord23(reverbL, 0, mixerFxL, 3);
+AudioConnection          patchCord24(reverbR, 0, mixerFxR, 3);
+AudioConnection          patchCord25(mixerFxL, 0, mixerMasterL, 1);
+AudioConnection          patchCord26(mixerFxR, 0, mixerMasterR, 1);
+AudioConnection          patchCord27(mixerMasterL, 0, audioOut, 0);
+AudioConnection          patchCord28(mixerMasterR, 0, audioOut, 1);
 AudioControlSGTL5000     sgtl5000;       //xy=104,28
 // GUItool: end automatically generated code
 

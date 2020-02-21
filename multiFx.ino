@@ -162,13 +162,7 @@ void configureReverb(void)
     reverbL.damping(vReverbDamping);
     reverbR.damping(vReverbDamping);
 
-    zeroInputs(mixerReverbPostL, mixerReverbPostR);
     zeroInputs(mixerReverbInL, mixerReverbInR);
-
-    mixerReverbPostL.gain(0, ON);
-    mixerReverbPostR.gain(0, ON);
-    mixerReverbPostL.gain(1, ON);
-    mixerReverbPostR.gain(1, ON);
 
     if (eReverb.isOn)
     {

@@ -359,9 +359,6 @@ void ISRDelayBypass()
             mixerMasterR.gain(0, ON);
         }
         
-        mixerFxL.gain(2, OFF);
-        mixerFxR.gain(2, OFF);
-        
         // Parallel Logic
         // if (!numOfFxEnabled)
         // {

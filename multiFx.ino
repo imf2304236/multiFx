@@ -182,7 +182,7 @@ void configureReverb(void)
 void configureDelay(void)
 {
     const float vDelayTime = 375;
-    const float vDelayFeedback = 0.5;
+    const float vDelayFeedback = 0.7;
 
     mixerDelayOutL.gain(0, ON);
     mixerDelayOutR.gain(0, ON);

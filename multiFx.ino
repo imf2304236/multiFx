@@ -7,6 +7,7 @@
 #define FILTER_PIN  17
 #define WET_PIN     20
 #define VOL_PIN     21
+#define FX2_PIN     31
 #define FX3_PIN     30
 #define FX4_PIN     29
 
@@ -140,6 +141,7 @@ void configurePins(void)
     pinMode(FILTER_PIN, INPUT_PULLDOWN);
     pinMode(WET_PIN, INPUT_PULLDOWN);
     pinMode(VOL_PIN, INPUT_PULLDOWN );
+    pinMode(FX2_PIN, INPUT_PULLUP);
     pinMode(FX3_PIN, INPUT_PULLUP);
     pinMode(FX4_PIN, INPUT_PULLUP);
 }

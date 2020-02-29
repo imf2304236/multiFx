@@ -67,11 +67,12 @@ AudioConnection          patchCord32(mixerReverbInL, reverbL);
 AudioConnection          patchCord33(reverbR, 0, mixerFxR, 3);
 AudioConnection          patchCord34(reverbL, 0, mixerFxL, 3);
 AudioConnection          patchCord35(mixerFxL, 0, mixerMasterL, 1);
-AudioConnection          patchCord36(mixerFxR, 0, mixerMasterR, 0);
+AudioConnection          patchCord36(mixerFxR, 0, mixerMasterR, 1);
 AudioConnection          patchCord37(mixerMasterL, 0, audioOut, 0);
 AudioConnection          patchCord38(mixerMasterR, 0, audioOut, 1);
 AudioControlSGTL5000     sgtl5000;       //xy=107.33343505859375,53.00004577636719
 // GUItool: end automatically generated code
+
 
 
 

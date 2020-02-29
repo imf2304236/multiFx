@@ -79,7 +79,8 @@ void setup() {
 
     setGainIn(vGainIn);
 
-    numOfFxEnabled = uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
+    numOfFxEnabled =
+        uint8_t(eFlange.isOn) + uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
 
     configureMixerMaster();
     configureMixerFx();
@@ -182,15 +183,23 @@ void configureReverb(void)
 
     if (eReverb.isOn)
     {
-        if (eDelay.isOn)
+        if (eDelay.isOn)    // Delay & Reverb are ON
         {
             mixerReverbInL.gain(3, ON);
             mixerReverbInR.gain(3, ON);
         }
         else
         {
-            mixerReverbInL.gain(0, ON);
-            mixerReverbInR.gain(0, ON);
+            if (eFlange.isOn)   // Flange & Reverb are ON
+            {
+                mixerReverbInL.gain(2, ON);
+                mixerReverbInR.gain(2, ON);
+            }
+            else    // Reverb is ON
+            {
+                mixerReverbInL.gain(0, ON);
+                mixerReverbInR.gain(0, ON);
+            }
         }
     }
 }
@@ -211,10 +220,17 @@ void configureDelay(void)
 
     if (eDelay.isOn)
     {
-        mixerDelayInL.gain(0, ON);
-        mixerDelayInR.gain(0, ON);
+        if (eFlange.isOn)   // Flange & Delay are ON
+        {
+            mixerDelayInL.gain(2, ON);
+            mixerDelayInR.gain(2, ON);
+        }
+        else    // Delay is oN
+        {
+            mixerDelayInL.gain(0, ON);
+            mixerDelayInR.gain(0, ON);
+        }
     }
-}
 }
 
 void configureFlange(void)
@@ -246,13 +262,20 @@ void configureMixerFx(void)
     }
     else
     {
-        if (eDelay.isOn)
+        if (eDelay.isOn)    // Delay is ON
         {
             mixerFxL.gain(2, ON);
             mixerFxR.gain(2, ON);
         }
+        else
+        {
+            if (eFlange.isOn)   // Flange is ON
+            {
+                mixerFxL.gain(1, ON);
+                mixerFxR.gain(1, ON);
+            }
+        }
     }
-    
 }
 
 void configureMixerMaster(void)

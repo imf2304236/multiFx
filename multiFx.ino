@@ -155,7 +155,7 @@ void configureFilter(void)
 void configureReverb(void)
 {
     const float vReverbSize = 0.9;
-    const float vReverbDamping = 0.313;
+    const float vReverbDamping = 0.3;
 
     reverbL.roomsize(vReverbSize);
     reverbR.roomsize(vReverbSize);

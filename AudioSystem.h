@@ -13,8 +13,8 @@ AudioAmplifier           gainInL;        //xy=289.666748046875,820.6666870117188
 AudioAmplifier           gainInR;        //xy=289.666748046875,850.6666870117188
 AudioFilterStateVariable filterR;        //xy=413.66680908203125,1096.0001220703125
 AudioFilterStateVariable filterL;        //xy=491.00006103515625,142.6667022705078
-AudioMixer4              mixer1;         //xy=665,1003.3333129882812
-AudioMixer4              mixer2;         //xy=676.6666259765625,100
+AudioMixer4              mixerFlangeInR;         //xy=665,1003.3333129882812
+AudioMixer4              mixerFlangeInL;         //xy=676.6666259765625,100
 AudioMixer4              mixerDelayInR;  //xy=715.0000610351562,1193.6666870117188
 AudioEffectFlange        flangeR;        //xy=786.6666870117188,1006.6668090820312
 AudioMixer4              mixerDelayInL;  //xy=839.6666870117188,241.99998474121094
@@ -40,12 +40,12 @@ AudioConnection          patchCord5(gainInR, 0, filterR, 0);
 AudioConnection          patchCord6(gainInR, 0, mixerMasterR, 0);
 AudioConnection          patchCord7(filterR, 2, mixerDelayInR, 0);
 AudioConnection          patchCord8(filterR, 2, mixerReverbInR, 0);
-AudioConnection          patchCord9(filterR, 2, mixer1, 0);
+AudioConnection          patchCord9(filterR, 2, mixerFlangeInR, 0);
 AudioConnection          patchCord10(filterL, 2, mixerDelayInL, 0);
 AudioConnection          patchCord11(filterL, 2, mixerReverbInL, 0);
-AudioConnection          patchCord12(filterL, 2, mixer2, 0);
-AudioConnection          patchCord13(mixer1, flangeR);
-AudioConnection          patchCord14(mixer2, flangeL);
+AudioConnection          patchCord12(filterL, 2, mixerFlangeInL, 0);
+AudioConnection          patchCord13(mixerFlangeInR, flangeR);
+AudioConnection          patchCord14(mixerFlangeInL, flangeL);
 AudioConnection          patchCord15(mixerDelayInR, 0, mixerDelayOutR, 0);
 AudioConnection          patchCord16(flangeR, 0, mixerDelayInR, 2);
 AudioConnection          patchCord17(flangeR, 0, mixerFxR, 1);

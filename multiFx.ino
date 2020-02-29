@@ -42,6 +42,15 @@ struct Effect eDelay = {
     &mixerDelayOutR
 };
 
+struct Effect eFlange = {
+    1,
+    HIGH,
+    &mixerFlangeInL,
+    &mixerFlangeInR,
+    NULL,
+    NULL
+};
+
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
 const float kVolumeMax = 0.5;

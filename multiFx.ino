@@ -10,6 +10,7 @@
 #define FX2_PIN     31
 #define FX3_PIN     30
 #define FX4_PIN     29
+#define FLANGE_DELAY_LENGTH (12*AUDIO_BLOCK_SAMPLES)
 
 // Constants
 #define ON  1.0
@@ -64,6 +65,9 @@ float vWet = 0.5;
 int vFilterFreq = 10000;
 uint8_t numOfFxEnabled = 0;
 
+short flangeDelayLineL[FLANGE_DELAY_LENGTH];
+short flangeDelayLineR[FLANGE_DELAY_LENGTH];
+
 
 void setup() {
     Serial.begin(9600);
@@ -81,6 +85,7 @@ void setup() {
     configureMixerFx();
     configureReverb();
     configureDelay();
+    configureFlange();
 
     configureISRs();
 }
@@ -208,6 +213,25 @@ void configureDelay(void)
     {
         mixerDelayInL.gain(0, ON);
         mixerDelayInR.gain(0, ON);
+    }
+}
+}
+
+void configureFlange(void)
+{
+    const int vOffset = 3*FLANGE_DELAY_LENGTH/4;
+    const int vDepth = FLANGE_DELAY_LENGTH/8;
+    const double vDelayRate = .0625;
+
+    flangeL.begin(flangeDelayLineL, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
+    flangeR.begin(flangeDelayLineR, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
+
+    zeroInputs(mixerFlangeInL, mixerFlangeInR);
+
+    if (eFlange.isOn)
+    {
+        mixerFlangeInL.gain(0, ON);
+        mixerFlangeInR.gain(0, ON);
     }
 }
 

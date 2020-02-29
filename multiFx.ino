@@ -10,7 +10,7 @@
 #define FX2_PIN     31
 #define FX3_PIN     30
 #define FX4_PIN     29
-#define FLANGE_DELAY_LENGTH (12*AUDIO_BLOCK_SAMPLES)
+#define FLANGE_DELAY_LENGTH (6*AUDIO_BLOCK_SAMPLES)
 
 // Constants
 #define ON  1.0
@@ -235,12 +235,21 @@ void configureDelay(void)
 
 void configureFlange(void)
 {
-    const int vOffset = 3*FLANGE_DELAY_LENGTH/4;
-    const int vDepth = FLANGE_DELAY_LENGTH/8;
-    const double vDelayRate = .0625;
+    const int vOffset = FLANGE_DELAY_LENGTH/4;
+    const int vDepth = FLANGE_DELAY_LENGTH/4;
+    const double vDelayRate = 0.0625;
 
-    flangeL.begin(flangeDelayLineL, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
     flangeR.begin(flangeDelayLineR, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
+    flangeL.begin(flangeDelayLineL, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
+
+    flangeL.voices(FLANGE_DELAY_PASSTHRU,0,0);
+    flangeR.voices(FLANGE_DELAY_PASSTHRU,0,0);
+
+    AudioProcessorUsageMaxReset();
+    AudioMemoryUsageMaxReset();
+
+    flangeL.voices(vOffset, vDepth, vDelayRate);
+    flangeR.voices(vOffset, vDepth, vDelayRate);
 
     zeroInputs(mixerFlangeInL, mixerFlangeInR);
 

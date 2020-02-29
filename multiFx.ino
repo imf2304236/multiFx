@@ -316,13 +316,6 @@ void ISRDelayBypass()
         
         mixerDelayInL.gain(0, ON);
         mixerDelayInR.gain(0, ON);
-
-        // Parallel Logic
-        // mixerFxL.gain(2, ON);
-        // mixerFxR.gain(2, ON);
-        
-        // mixerDelayInL.gain(0, ON);
-        // mixerDelayInR.gain(0, ON);
     }
     else    // Delay switched OFF
     {
@@ -343,13 +336,6 @@ void ISRDelayBypass()
             mixerMasterL.gain(0, ON);
             mixerMasterR.gain(0, ON);
         }
-        
-        // Parallel Logic
-        // if (!numOfFxEnabled)
-        // {
-        //     mixerMasterL.gain(0, ON);
-        //     mixerMasterR.gain(0, ON);
-        // }
     }
     
 }

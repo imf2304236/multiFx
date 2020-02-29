@@ -384,13 +384,6 @@ void ISRReverbBypass()
             mixerReverbInL.gain(0, ON);
             mixerReverbInR.gain(0, ON);
         }
-
-        // Parallel Logic
-        // mixerFxL.gain(3, ON);
-        // mixerFxR.gain(3, ON);
-        
-        // mixerReverbInL.gain(0, ON);
-        // mixerReverbInR.gain(0, ON);
     }
     else   // Reverb Switched OFF
     {
@@ -411,12 +404,5 @@ void ISRReverbBypass()
             mixerMasterL.gain(0, ON);
             mixerMasterR.gain(0, ON);
         }
-
-        // Parallel Logic
-        // if (!numOfFxEnabled)
-        // {
-        //     mixerMasterL.gain(0, ON);
-        //     mixerMasterR.gain(0, ON);
-        // }
     }
 }

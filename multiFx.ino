@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <Bounce2.h>
 #include "AudioSystem.h"
 
 // Pins
@@ -68,6 +69,9 @@ uint8_t numOfFxEnabled = 0;
 short flangeDelayLineL[FLANGE_DELAY_LENGTH];
 short flangeDelayLineR[FLANGE_DELAY_LENGTH];
 
+Bounce bFx2Bypass = Bounce(FX2_PIN,15);
+Bounce bFx3Bypass = Bounce(FX3_PIN,15);
+Bounce bFx4Bypass = Bounce(FX4_PIN,15);
 
 void setup() {
     Serial.begin(9600);
@@ -87,8 +91,6 @@ void setup() {
     configureReverb();
     configureDelay();
     configureFlange();
-
-    configureISRs();
 }
 
 
@@ -103,6 +105,25 @@ void loop()
 
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
+
+        bFx4Bypass.update();
+        bFx3Bypass.update();
+        bFx2Bypass.update();
+
+        if (bFx4Bypass.fallingEdge())
+        {
+            ISRReverbBypass();
+        }
+
+        if (bFx3Bypass.fallingEdge())
+        {
+            ISRDelayBypass();
+        }
+
+        if (bFx2Bypass.fallingEdge())
+        {
+            ISRFlangeBypass();
+        }
 
         setDryWetBalance();
 
@@ -146,7 +167,7 @@ void configurePins(void)
     pinMode(GAININ_PIN, INPUT_PULLDOWN);
     pinMode(FILTER_PIN, INPUT_PULLDOWN);
     pinMode(WET_PIN, INPUT_PULLDOWN);
-    pinMode(VOL_PIN, INPUT_PULLDOWN );
+    pinMode(VOL_PIN, INPUT_PULLDOWN);
     pinMode(FX2_PIN, INPUT_PULLUP);
     pinMode(FX3_PIN, INPUT_PULLUP);
     pinMode(FX4_PIN, INPUT_PULLUP);
@@ -302,12 +323,6 @@ void configureMixerMaster(void)
     }
 }
 
-void configureISRs(void)
-{
-    attachInterrupt(digitalPinToInterrupt(FX3_PIN), ISRDelayBypass, FALLING);
-    attachInterrupt(digitalPinToInterrupt(FX4_PIN), ISRReverbBypass, FALLING);
-}
-
 void setGainIn(float value)
 {
     gainInL.gain(value);
@@ -355,6 +370,28 @@ void printParameters(void)
     Serial.write(12);
 }
 
+void ISRFlangeBypass()
+{
+    eFlange.isOn = !(eFlange.isOn);
+
+    if (eFlange.isOn)
+    {
+        Serial.println("FLANGE ON");
+
+        ++numOfFxEnabled;
+
+        setDryWetBalance();
+    }
+    else
+    {
+        Serial.println("FLANGE OFF");
+
+        --numOfFxEnabled;
+
+        zeroInputs(eDelay);
+    }
+}
+
 void ISRDelayBypass()
 {
     eDelay.isOn = !(eDelay.isOn);
@@ -367,7 +404,6 @@ void ISRDelayBypass()
 
         setDryWetBalance();
 
-        // Serial Logic
         if (eReverb.isOn)
         {
             mixerReverbInL.gain(0, OFF);
@@ -392,7 +428,6 @@ void ISRDelayBypass()
 
         zeroInputs(eDelay);
 
-        // Serial Logic
         if (eReverb.isOn)
         {
             mixerReverbInL.gain(0, ON);
@@ -403,8 +438,7 @@ void ISRDelayBypass()
             mixerMasterL.gain(0, ON);
             mixerMasterR.gain(0, ON);
         }
-    }
-    
+    }   
 }
 
 void ISRReverbBypass()
@@ -422,7 +456,6 @@ void ISRReverbBypass()
         mixerFxL.gain(eReverb.index, ON);
         mixerFxR.gain(eReverb.index, ON);
 
-        // Serial Logic
         if (eDelay.isOn)
         {
             mixerFxL.gain(eDelay.index, OFF);
@@ -446,7 +479,6 @@ void ISRReverbBypass()
 
         zeroInputs(eReverb);
 
-        // Serial Logic
         if (eDelay.isOn)
         {
             mixerFxL.gain(eDelay.index, ON);

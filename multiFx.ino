@@ -258,19 +258,24 @@ void configureFlange(void)
 {
     const int vOffset = FLANGE_DELAY_LENGTH/4;
     const int vDepth = FLANGE_DELAY_LENGTH/4;
-    const double vDelayRate = 0.0625;
+    const double vDelayRate = 0.625;
 
     flangeR.begin(flangeDelayLineR, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
     flangeL.begin(flangeDelayLineL, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
 
-    flangeL.voices(FLANGE_DELAY_PASSTHRU,0,0);
-    flangeR.voices(FLANGE_DELAY_PASSTHRU,0,0);
+    if (eFlange.isOn)
+    {
+        flangeL.voices(vOffset, vDepth, vDelayRate);
+        flangeR.voices(vOffset, vDepth, vDelayRate);
+    }
+    else
+    {
+        flangeL.voices(FLANGE_DELAY_PASSTHRU,0,0);
+        flangeR.voices(FLANGE_DELAY_PASSTHRU,0,0);        
+    }
 
     AudioProcessorUsageMaxReset();
     AudioMemoryUsageMaxReset();
-
-    flangeL.voices(vOffset, vDepth, vDelayRate);
-    flangeR.voices(vOffset, vDepth, vDelayRate);
 
     zeroInputs(mixerFlangeInL, mixerFlangeInR);
 

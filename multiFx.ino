@@ -20,10 +20,10 @@
 #define OFF 0.0
 
 enum StateFlags {
-    S_REVERB = 0x01,
-    S_DELAY  = 0x02,
-    S_FLANGE = 0x04,
-    S_CHORUS = 0x08
+    S_REVERB = 0x1 << 0,
+    S_DELAY  = 0x1 << 1,
+    S_FLANGE = 0x1 << 2,
+    S_CHORUS = 0x1 << 3,
 };
 
 const int kFilterFreqMax = 12000;
@@ -66,6 +66,7 @@ void setup() {
     configureReverb();
     configureDelay();
     configureFlange();
+    configureChorus();
 
     switchLogic();
 }
@@ -101,6 +102,7 @@ void updateState()
     bFx4Bypass.update();
     bFx3Bypass.update();
     bFx2Bypass.update();
+    bFx1Bypass.update();
 
     if (bFx4Bypass.fallingEdge())
     {
@@ -149,6 +151,22 @@ void updateState()
         
         switchLogic();
     }
+
+    if (bFx1Bypass.fallingEdge())
+    {
+        state ^= S_CHORUS;
+        
+        if (state & S_CHORUS)
+        {
+            Serial.println("CHORUS ON");
+        }
+        else
+        {
+            Serial.println("CHORUS OFF");
+        }
+        
+        switchLogic();
+    }
 }
 
 void initializeState()
@@ -180,6 +198,7 @@ void configurePins(void)
     pinMode(FILTER_PIN, INPUT_PULLDOWN);
     pinMode(WET_PIN, INPUT_PULLDOWN);
     pinMode(VOL_PIN, INPUT_PULLDOWN);
+    pinMode(FX1_PIN, INPUT_PULLUP);
     pinMode(FX2_PIN, INPUT_PULLUP);
     pinMode(FX3_PIN, INPUT_PULLUP);
     pinMode(FX4_PIN, INPUT_PULLUP);
@@ -226,6 +245,8 @@ void configureDelay(void)
     mixerDelayOutR.gain(1, vDelayFeedback);
     delayL.delay(0, vDelayTime);
     delayR.delay(0, vDelayTime);
+
+    zeroInputs(mixerDelayInL, mixerDelayInR);
 }
 
 void configureFlange(void)
@@ -242,6 +263,8 @@ void configureFlange(void)
 
     AudioProcessorUsageMaxReset();
     AudioMemoryUsageMaxReset();
+
+    zeroInputs(mixerFlangeInL, mixerFlangeInR);
 }
 
 void configureChorus(void)
@@ -258,6 +281,11 @@ void configureChorus(void)
         Serial.println("AudioEffectChorus - right channel begin failed");
         while(1);
     }
+
+    chorusL.voices(vChorusVoices);
+    chorusR.voices(vChorusVoices);
+
+    zeroInputs(mixerChorusInL, mixerChorusInR);
 }
 
 void configureMixerFx(void)
@@ -306,21 +334,33 @@ void switchLogic(void)
     {
         case 0x0:
         {
+            Serial.println("Case: 0x0");
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, OFF);
             mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, OFF);
@@ -332,21 +372,32 @@ void switchLogic(void)
         }
         case 0x1:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, OFF);
             mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, ON);
             mixerReverbInR.gain(0, ON);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, OFF);
@@ -358,21 +409,32 @@ void switchLogic(void)
         }
         case 0x2:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, OFF);
             mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, ON);
             mixerDelayInR.gain(0, ON);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, ON);
@@ -384,21 +446,32 @@ void switchLogic(void)
         }
         case 0x3:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, OFF);
             mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, ON);
             mixerDelayInR.gain(0, ON);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, ON);
             mixerReverbInR.gain(3, ON);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, OFF);
@@ -410,21 +483,32 @@ void switchLogic(void)
         }
         case 0x4:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, ON);
             mixerFlangeInR.gain(0, ON);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, ON);
             mixerFxR.gain(1, ON);
             mixerFxL.gain(2, OFF);
@@ -436,21 +520,32 @@ void switchLogic(void)
         }
         case 0x5:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, ON);
             mixerFlangeInR.gain(0, ON);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, OFF);
             mixerDelayInR.gain(2, OFF);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, ON);
             mixerReverbInR.gain(2, ON);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, OFF);
@@ -462,21 +557,32 @@ void switchLogic(void)
         }
         case 0x6:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, ON);
             mixerFlangeInR.gain(0, ON);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, ON);
             mixerDelayInR.gain(2, ON);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, OFF);
             mixerReverbInR.gain(3, OFF);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, ON);
@@ -488,21 +594,329 @@ void switchLogic(void)
         }
         case 0x7:
         {
+            mixerChorusInL.gain(0, OFF);
+            mixerChorusInR.gain(0, OFF);
+
             mixerFlangeInL.gain(0, ON);
             mixerFlangeInR.gain(0, ON);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
 
             mixerDelayInL.gain(0, OFF);
             mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
             mixerDelayInL.gain(2, ON);
             mixerDelayInR.gain(2, ON);
 
             mixerReverbInL.gain(0, OFF);
             mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
             mixerReverbInL.gain(2, OFF);
             mixerReverbInR.gain(2, OFF);
             mixerReverbInL.gain(3, ON);
             mixerReverbInR.gain(3, ON);
 
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0x8:
+        {
+            Serial.println("Case: 0x8");
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, ON);
+            mixerFxR.gain(0, ON);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0x9:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, ON);
+            mixerReverbInR.gain(1, ON);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0xA:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, ON);
+            mixerDelayInR.gain(1, ON);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0xB:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, OFF);
+            mixerFlangeInR.gain(1, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, ON);
+            mixerDelayInR.gain(1, ON);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0xC:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, ON);
+            mixerFlangeInR.gain(1, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, ON);
+            mixerFxR.gain(1, ON);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0xD:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, ON);
+            mixerFlangeInR.gain(1, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, ON);
+            mixerReverbInR.gain(1, ON);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0xE:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, ON);
+            mixerFlangeInR.gain(1, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, ON);
+            mixerDelayInR.gain(2, ON);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0xF:
+        {
+            mixerChorusInL.gain(0, ON);
+            mixerChorusInR.gain(0, ON);
+
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+            mixerFlangeInL.gain(1, ON);
+            mixerFlangeInR.gain(1, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(1, OFF);
+            mixerDelayInR.gain(1, OFF);
+            mixerDelayInL.gain(2, ON);
+            mixerDelayInR.gain(2, ON);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(1, OFF);
+            mixerReverbInR.gain(1, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+
+            mixerFxL.gain(0, OFF);
+            mixerFxR.gain(0, OFF);
             mixerFxL.gain(1, OFF);
             mixerFxR.gain(1, OFF);
             mixerFxL.gain(2, OFF);

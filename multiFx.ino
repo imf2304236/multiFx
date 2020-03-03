@@ -8,10 +8,12 @@
 #define FILTER_PIN  17
 #define WET_PIN     20
 #define VOL_PIN     21
+#define FX1_PIN     32
 #define FX2_PIN     31
 #define FX3_PIN     30
 #define FX4_PIN     29
 #define FLANGE_DELAY_LENGTH (6*AUDIO_BLOCK_SAMPLES)
+#define CHORUS_DELAY_LENGTH (16*AUDIO_BLOCK_SAMPLES)
 
 // Constants
 #define ON  1.0
@@ -39,7 +41,10 @@ uint8_t state = 0x0;
 
 short flangeDelayLineL[FLANGE_DELAY_LENGTH];
 short flangeDelayLineR[FLANGE_DELAY_LENGTH];
+short chorusDelayLineL[CHORUS_DELAY_LENGTH];
+short chorusDelayLineR[CHORUS_DELAY_LENGTH];
 
+Bounce bFx1Bypass = Bounce(FX1_PIN,15);
 Bounce bFx2Bypass = Bounce(FX2_PIN,15);
 Bounce bFx3Bypass = Bounce(FX3_PIN,15);
 Bounce bFx4Bypass = Bounce(FX4_PIN,15);
@@ -237,6 +242,22 @@ void configureFlange(void)
 
     AudioProcessorUsageMaxReset();
     AudioMemoryUsageMaxReset();
+}
+
+void configureChorus(void)
+{
+    const float vChorusVoices = 4;
+
+    if(!chorusL.begin(chorusDelayLineL, CHORUS_DELAY_LENGTH, vChorusVoices))
+    {
+        Serial.println("AudioEffectChorus - left channel begin failed");
+        while(1);
+    }
+    if(!chorusR.begin(chorusDelayLineR, CHORUS_DELAY_LENGTH, vChorusVoices))
+    {
+        Serial.println("AudioEffectChorus - right channel begin failed");
+        while(1);
+    }
 }
 
 void configureMixerFx(void)

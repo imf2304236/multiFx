@@ -24,27 +24,6 @@ enum StateFlags {
     S_CHORUS = 0x08
 };
 
-struct Effect
-{
-    AudioMixer4 *pMixerInL = NULL;
-    AudioMixer4 *pMixerInR = NULL;
-};
-
-struct Effect eReverb = {
-    &mixerReverbInL,
-    &mixerReverbInR,
-};
-
-struct Effect eDelay = {
-    &mixerDelayInL,
-    &mixerDelayInR,
-};
-
-struct Effect eFlange = {
-    &mixerFlangeInL,
-    &mixerFlangeInR,
-};
-
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
 const float kVolumeMax = 0.5;
@@ -170,15 +149,6 @@ void updateState()
 void initializeState()
 {
     state = 0x0;
-}
-
-void zeroInputs(struct Effect &effect)
-{
-    for (int i = 0; i != 4; ++i)
-    {
-        effect.pMixerInL->gain(i, OFF);
-        effect.pMixerInR->gain(i, OFF);
-    }
 }
 
 void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR)

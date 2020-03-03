@@ -17,41 +17,32 @@
 #define ON  1.0
 #define OFF 0.0
 
+enum StateFlags {
+    S_REVERB = 0x01,
+    S_DELAY  = 0x02,
+    S_FLANGE = 0x04,
+    S_CHORUS = 0x08
+};
+
 struct Effect
 {
-    int index = -1;
-    volatile uint8_t isOn = LOW;
     AudioMixer4 *pMixerInL = NULL;
     AudioMixer4 *pMixerInR = NULL;
-    AudioMixer4 *pMixerOutL = NULL;
-    AudioMixer4 *pMixerOutR = NULL;
 };
 
 struct Effect eReverb = {
-    3,
-    LOW,
     &mixerReverbInL,
     &mixerReverbInR,
-    NULL,
-    NULL
 };
 
 struct Effect eDelay = {
-    2,
-    LOW,
     &mixerDelayInL,
     &mixerDelayInR,
-    &mixerDelayOutL,
-    &mixerDelayOutR
 };
 
 struct Effect eFlange = {
-    1,
-    HIGH,
     &mixerFlangeInL,
     &mixerFlangeInR,
-    NULL,
-    NULL
 };
 
 const int kFilterFreqMax = 12000;
@@ -64,7 +55,8 @@ float vGainIn = kGainInMax;
 float vVolume = kVolumeMax;
 float vWet = 0.5;
 int vFilterFreq = 10000;
-uint8_t numOfFxEnabled = 0;
+
+uint8_t state = 0x0;
 
 short flangeDelayLineL[FLANGE_DELAY_LENGTH];
 short flangeDelayLineR[FLANGE_DELAY_LENGTH];
@@ -83,14 +75,15 @@ void setup() {
 
     setGainIn(vGainIn);
 
-    numOfFxEnabled =
-        uint8_t(eFlange.isOn) + uint8_t(eDelay.isOn) + uint8_t (eReverb.isOn);
+    initializeState();
 
     configureMixerMaster();
     configureMixerFx();
     configureReverb();
     configureDelay();
     configureFlange();
+
+    switchLogic();
 }
 
 
@@ -106,24 +99,7 @@ void loop()
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
 
-        bFx4Bypass.update();
-        bFx3Bypass.update();
-        bFx2Bypass.update();
-
-        if (bFx4Bypass.fallingEdge())
-        {
-            ISRReverbBypass();
-        }
-
-        if (bFx3Bypass.fallingEdge())
-        {
-            ISRDelayBypass();
-        }
-
-        if (bFx2Bypass.fallingEdge())
-        {
-            ISRFlangeBypass();
-        }
+        updateState();
 
         setDryWetBalance();
 
@@ -133,6 +109,67 @@ void loop()
 
         msec = 0;
     }
+}
+
+
+void updateState()
+{
+    bFx4Bypass.update();
+    bFx3Bypass.update();
+    bFx2Bypass.update();
+
+    if (bFx4Bypass.fallingEdge())
+    {
+        state ^= S_REVERB;
+
+        if (state & S_REVERB)
+        {
+            Serial.println("REVERB ON");
+        }
+        else
+        {
+            Serial.println("REVERB OFF");
+        }
+
+        switchLogic();
+    }
+
+    if (bFx3Bypass.fallingEdge())
+    {
+        state ^= S_DELAY;
+
+        if (state & S_DELAY)
+        {
+            Serial.println("DELAY ON");
+        }
+        else
+        {
+            Serial.println("DELAY OFF");
+        }
+
+        switchLogic();
+    }
+
+    if (bFx2Bypass.fallingEdge())
+    {
+        state ^= S_FLANGE;
+        
+        if (state & S_FLANGE)
+        {
+            Serial.println("FLANGE ON");
+        }
+        else
+        {
+            Serial.println("FLANGE OFF");
+        }
+        
+        switchLogic();
+    }
+}
+
+void initializeState()
+{
+    state = 0x0;
 }
 
 void zeroInputs(struct Effect &effect)
@@ -192,8 +229,8 @@ void configureFilter(void)
 
 void configureReverb(void)
 {
-    const float vReverbSize = 0.9;
-    const float vReverbDamping = 0.3;
+    const float vReverbSize = 0.5;
+    const float vReverbDamping = 0.5;
 
     reverbL.roomsize(vReverbSize);
     reverbR.roomsize(vReverbSize);
@@ -201,28 +238,6 @@ void configureReverb(void)
     reverbR.damping(vReverbDamping);
 
     zeroInputs(mixerReverbInL, mixerReverbInR);
-
-    if (eReverb.isOn)
-    {
-        if (eDelay.isOn)    // Delay & Reverb are ON
-        {
-            mixerReverbInL.gain(3, ON);
-            mixerReverbInR.gain(3, ON);
-        }
-        else
-        {
-            if (eFlange.isOn)   // Flange & Reverb are ON
-            {
-                mixerReverbInL.gain(2, ON);
-                mixerReverbInR.gain(2, ON);
-            }
-            else    // Reverb is ON
-            {
-                mixerReverbInL.gain(0, ON);
-                mixerReverbInR.gain(0, ON);
-            }
-        }
-    }
 }
 
 void configureDelay(void)
@@ -236,22 +251,6 @@ void configureDelay(void)
     mixerDelayOutR.gain(1, vDelayFeedback);
     delayL.delay(0, vDelayTime);
     delayR.delay(0, vDelayTime);
-
-    zeroInputs(mixerDelayInL, mixerDelayInR);
-
-    if (eDelay.isOn)
-    {
-        if (eFlange.isOn)   // Flange & Delay are ON
-        {
-            mixerDelayInL.gain(2, ON);
-            mixerDelayInR.gain(2, ON);
-        }
-        else    // Delay is oN
-        {
-            mixerDelayInL.gain(0, ON);
-            mixerDelayInR.gain(0, ON);
-        }
-    }
 }
 
 void configureFlange(void)
@@ -263,69 +262,23 @@ void configureFlange(void)
     flangeR.begin(flangeDelayLineR, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
     flangeL.begin(flangeDelayLineL, FLANGE_DELAY_LENGTH, vOffset, vDepth, vDelayRate);
 
-    if (eFlange.isOn)
-    {
-        flangeL.voices(vOffset, vDepth, vDelayRate);
-        flangeR.voices(vOffset, vDepth, vDelayRate);
-    }
-    else
-    {
-        flangeL.voices(FLANGE_DELAY_PASSTHRU,0,0);
-        flangeR.voices(FLANGE_DELAY_PASSTHRU,0,0);        
-    }
+    flangeL.voices(vOffset, vDepth, vDelayRate);
+    flangeR.voices(vOffset, vDepth, vDelayRate);
 
     AudioProcessorUsageMaxReset();
     AudioMemoryUsageMaxReset();
-
-    zeroInputs(mixerFlangeInL, mixerFlangeInR);
-
-    if (eFlange.isOn)
-    {
-        mixerFlangeInL.gain(0, ON);
-        mixerFlangeInR.gain(0, ON);
-    }
 }
 
 void configureMixerFx(void)
 {
     zeroInputs(mixerFxL, mixerFxR);
-    
-    if (eReverb.isOn)
-    {
-        mixerFxL.gain(3, ON);
-        mixerFxR.gain(3, ON);
-    }
-    else
-    {
-        if (eDelay.isOn)    // Delay is ON
-        {
-            mixerFxL.gain(2, ON);
-            mixerFxR.gain(2, ON);
-        }
-        else
-        {
-            if (eFlange.isOn)   // Flange is ON
-            {
-                mixerFxL.gain(1, ON);
-                mixerFxR.gain(1, ON);
-            }
-        }
-    }
 }
 
 void configureMixerMaster(void)
 {
     zeroInputs(mixerMasterL, mixerMasterR);
 
-    if (numOfFxEnabled == 0)
-    {
-        mixerMasterL.gain(0, ON);
-        mixerMasterR.gain(0, ON);
-    }
-    else
-    {
-        setDryWetBalance();
-    }
+    setDryWetBalance();
 }
 
 void setGainIn(float value)
@@ -340,22 +293,238 @@ void setFilterFreq(float value)
     filterR.frequency(value);
 }
 
-void setDryWetBalance(struct Effect *pEffect, float vWet)
-{
-    pEffect->pMixerOutL->gain(0, 1.0 - vWet);
-    pEffect->pMixerOutR->gain(0, 1.0 - vWet);
-    pEffect->pMixerOutL->gain(1, vWet);
-    pEffect->pMixerOutR->gain(1, vWet);
-}
-
 void setDryWetBalance()
 {
-    if (numOfFxEnabled)
+    if (state)
     {
         mixerMasterL.gain(0, 1.0 - vWet);
         mixerMasterR.gain(0, 1.0 - vWet);
         mixerMasterL.gain(1, vWet);
         mixerMasterR.gain(1, vWet);
+    }
+    else
+    {
+        mixerMasterL.gain(0, ON);
+        mixerMasterR.gain(0, ON);
+    }
+}
+
+void switchLogic(void)
+{
+    switch (state)
+    {
+        case 0x0:
+        {
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+            
+            break;
+        }
+        case 0x1:
+        {
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, ON);
+            mixerReverbInR.gain(0, ON);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0x2:
+        {
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+
+            mixerDelayInL.gain(0, ON);
+            mixerDelayInR.gain(0, ON);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0x3:
+        {
+            mixerFlangeInL.gain(0, OFF);
+            mixerFlangeInR.gain(0, OFF);
+
+            mixerDelayInL.gain(0, ON);
+            mixerDelayInR.gain(0, ON);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0x4:
+        {
+            mixerFlangeInL.gain(0, ON);
+            mixerFlangeInR.gain(0, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, ON);
+            mixerFxR.gain(1, ON);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0x5:
+        {
+            mixerFlangeInL.gain(0, ON);
+            mixerFlangeInR.gain(0, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, OFF);
+            mixerDelayInR.gain(2, OFF);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, ON);
+            mixerReverbInR.gain(2, ON);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        case 0x6:
+        {
+            mixerFlangeInL.gain(0, ON);
+            mixerFlangeInR.gain(0, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, ON);
+            mixerDelayInR.gain(2, ON);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, OFF);
+            mixerReverbInR.gain(3, OFF);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, ON);
+            mixerFxR.gain(2, ON);
+            mixerFxL.gain(3, OFF);
+            mixerFxR.gain(3, OFF);
+
+            break;
+        }
+        case 0x7:
+        {
+            mixerFlangeInL.gain(0, ON);
+            mixerFlangeInR.gain(0, ON);
+
+            mixerDelayInL.gain(0, OFF);
+            mixerDelayInR.gain(0, OFF);
+            mixerDelayInL.gain(2, ON);
+            mixerDelayInR.gain(2, ON);
+
+            mixerReverbInL.gain(0, OFF);
+            mixerReverbInR.gain(0, OFF);
+            mixerReverbInL.gain(2, OFF);
+            mixerReverbInR.gain(2, OFF);
+            mixerReverbInL.gain(3, ON);
+            mixerReverbInR.gain(3, ON);
+
+            mixerFxL.gain(1, OFF);
+            mixerFxR.gain(1, OFF);
+            mixerFxL.gain(2, OFF);
+            mixerFxR.gain(2, OFF);
+            mixerFxL.gain(3, ON);
+            mixerFxR.gain(3, ON);
+
+            break;
+        }
+        default:
+        {
+            Serial.println("ERROR: INVALID STATE");
+        }
     }
 }
 
@@ -373,126 +542,4 @@ void printParameters(void)
 
     Serial.flush();
     Serial.write(12);
-}
-
-void ISRFlangeBypass()
-{
-    eFlange.isOn = !(eFlange.isOn);
-
-    if (eFlange.isOn)
-    {
-        Serial.println("FLANGE ON");
-
-        ++numOfFxEnabled;
-
-        setDryWetBalance();
-    }
-    else
-    {
-        Serial.println("FLANGE OFF");
-
-        --numOfFxEnabled;
-
-        zeroInputs(eDelay);
-    }
-}
-
-void ISRDelayBypass()
-{
-    eDelay.isOn = !(eDelay.isOn);
-
-    if (eDelay.isOn)
-    {
-        Serial.println("DELAY ON");
-
-        ++numOfFxEnabled;
-
-        setDryWetBalance();
-
-        if (eReverb.isOn)
-        {
-            mixerReverbInL.gain(0, OFF);
-            mixerReverbInR.gain(0, OFF);
-            mixerReverbInL.gain(3, ON);
-            mixerReverbInR.gain(3, ON);
-        }
-        else
-        {
-            mixerFxL.gain(2, ON);
-            mixerFxR.gain(2, ON);
-        }
-        
-        mixerDelayInL.gain(0, ON);
-        mixerDelayInR.gain(0, ON);
-    }
-    else    // Delay switched OFF
-    {
-        Serial.println("DELAY OFF");
-
-        --numOfFxEnabled;
-
-        zeroInputs(eDelay);
-
-        if (eReverb.isOn)
-        {
-            mixerReverbInL.gain(0, ON);
-            mixerReverbInR.gain(0, ON);
-        }
-        else
-        {
-            mixerMasterL.gain(0, ON);
-            mixerMasterR.gain(0, ON);
-        }
-    }   
-}
-
-void ISRReverbBypass()
-{
-    eReverb.isOn = !(eReverb.isOn);
-
-    if (eReverb.isOn)   // Reverb Switched ON
-    {
-        Serial.println("REVERB ON");
-
-        ++numOfFxEnabled;
-
-        setDryWetBalance();
-
-        mixerFxL.gain(eReverb.index, ON);
-        mixerFxR.gain(eReverb.index, ON);
-
-        if (eDelay.isOn)
-        {
-            mixerFxL.gain(eDelay.index, OFF);
-            mixerFxR.gain(eDelay.index, OFF);
-            mixerReverbInL.gain(0, OFF);
-            mixerReverbInR.gain(0, OFF);
-            mixerReverbInL.gain(3, ON);
-            mixerReverbInR.gain(3, ON);
-        }
-        else
-        {
-            mixerReverbInL.gain(0, ON);
-            mixerReverbInR.gain(0, ON);
-        }
-    }
-    else   // Reverb Switched OFF
-    {
-        Serial.println("REVERB OFF");
-
-        --numOfFxEnabled;
-
-        zeroInputs(eReverb);
-
-        if (eDelay.isOn)
-        {
-            mixerFxL.gain(eDelay.index, ON);
-            mixerFxR.gain(eDelay.index, ON);
-        }
-        else
-        {
-            mixerMasterL.gain(0, ON);
-            mixerMasterR.gain(0, ON);
-        }
-    }
 }

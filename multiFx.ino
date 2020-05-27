@@ -4,14 +4,20 @@
 #include "AudioSystem.h"
 
 // Pins
-#define GAININ_PIN  16
-#define FILTER_PIN  17
-#define WET_PIN     20
-#define VOL_PIN     21
-#define FX1_PIN     32
-#define FX2_PIN     31
-#define FX3_PIN     30
-#define FX4_PIN     29
+#define GAININ_PIN      A3 //was 0
+#define FILTER_PIN      A2 //was 1
+#define WET_PIN         A1 //was 2
+#define VOL_PIN         A0 //was 3
+#define FX1_PIN         4  //
+#define FX2_PIN         5  
+#define FX3_PIN         6  
+#define FX4_PIN         9 
+#define LED_FX1_PIN     11 //REVERB
+#define LED_FX2_PIN     10 //DELAY
+#define LED_FX3_PIN     2  //FLANGE
+#define LED_FX4_PIN     3  //CHORUS
+#define SYSTEM_LED      13
+
 #define FLANGE_DELAY_LENGTH (6*AUDIO_BLOCK_SAMPLES)
 #define CHORUS_DELAY_LENGTH (16*AUDIO_BLOCK_SAMPLES)
 
@@ -28,7 +34,7 @@ enum StateFlags {
 
 const int kFilterFreqMax = 12000;
 const float kGainInMax = 0.8;
-const float kVolumeMax = 0.5;
+const float kVolumeMax = 0.5; //was 0.5
 
 elapsedMillis msec = 0;
 const unsigned tUpdate = 1;
@@ -36,6 +42,9 @@ float vGainIn = kGainInMax;
 float vVolume = kVolumeMax;
 float vWet = 0.5;
 int vFilterFreq = 10000;
+int counter = 0;
+
+short toggle = 0;
 
 uint8_t state = 0x0;
 
@@ -48,6 +57,48 @@ Bounce bFx1Bypass = Bounce(FX1_PIN,15);
 Bounce bFx2Bypass = Bounce(FX2_PIN,15);
 Bounce bFx3Bypass = Bounce(FX3_PIN,15);
 Bounce bFx4Bypass = Bounce(FX4_PIN,15);
+
+void sayHello(){
+    //running
+    for(int i = 0; i < 3; i++){
+      digitalWrite(LED_FX1_PIN, HIGH);
+      delay(100);
+      digitalWrite(LED_FX1_PIN, LOW);
+      delay(100);
+      
+      digitalWrite(LED_FX2_PIN, HIGH);
+      delay(100); 
+      digitalWrite(LED_FX2_PIN, LOW);
+      delay(100);
+      
+      digitalWrite(LED_FX3_PIN, HIGH);
+      delay(100);  
+      digitalWrite(LED_FX3_PIN, LOW);
+      delay(100);
+      
+      digitalWrite(LED_FX4_PIN, HIGH);
+      delay(100);  
+      digitalWrite(LED_FX4_PIN, LOW);
+      delay(100);
+    }
+    //flashing
+    for(int i = 0; i < 3; i++){
+      digitalWrite(LED_FX1_PIN, HIGH);
+      digitalWrite(LED_FX2_PIN, HIGH);
+      digitalWrite(LED_FX3_PIN, HIGH);
+      digitalWrite(LED_FX4_PIN, HIGH);
+      delay(200);  
+      
+      digitalWrite(LED_FX1_PIN, LOW);
+      digitalWrite(LED_FX2_PIN, LOW);
+      digitalWrite(LED_FX3_PIN, LOW);
+      digitalWrite(LED_FX4_PIN, LOW);
+      delay(200);
+    }
+    
+    digitalWrite(SYSTEM_LED, HIGH);
+    toggle = HIGH;
+  }
 
 void setup() {
     Serial.begin(9600);
@@ -69,6 +120,8 @@ void setup() {
     configureChorus();
 
     switchLogic();
+
+    sayHello();
 }
 
 
@@ -76,10 +129,10 @@ void loop()
 {
     if ((msec > tUpdate))
     {
-        vGainIn = (float) analogRead(GAININ_PIN) / (1023.0 / kGainInMax);
-        vFilterFreq = (float) analogRead(FILTER_PIN) / 1023.0 * kFilterFreqMax;
-        vWet = (float) analogRead(WET_PIN) / (1023.0);
-        vVolume = (float) analogRead(VOL_PIN) / (1023.0 / kVolumeMax);
+        vGainIn = (float) analogRead(A3) / (1023.0 / kGainInMax); //GAININ_PIN
+        vFilterFreq = (float) analogRead(A2) / 1023.0 * kFilterFreqMax;//FILTER_PIN
+        vWet = (float) analogRead(A1) / (1023.0); //WET_PIN
+        vVolume = (float) analogRead(A0) / (1023.0 / kVolumeMax); //VOL_PIN
 
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
@@ -90,10 +143,22 @@ void loop()
 
         sgtl5000.volume(vVolume);
 
-        // printParameters();
-
+        if(counter > 999){          
+          printParameters();
+          counter = 0;
+        }
+        counter++;
         msec = 0;
-    }
+    }     
+//    if(toggle){
+//      digitalWrite(SYSTEM_LED, toggle);
+//      toggle = LOW;
+//    }
+//    else{
+//      digitalWrite(SYSTEM_LED, toggle);
+//      toggle = HIGH;
+//    }
+//    //delay(50);
 }
 
 
@@ -110,10 +175,12 @@ void updateState()
 
         if (state & S_REVERB)
         {
+            digitalWrite(LED_FX1_PIN, HIGH);
             Serial.println("REVERB ON");
         }
         else
         {
+            digitalWrite(LED_FX1_PIN, LOW);
             Serial.println("REVERB OFF");
         }
 
@@ -126,10 +193,12 @@ void updateState()
 
         if (state & S_DELAY)
         {
+            digitalWrite(LED_FX2_PIN, HIGH);
             Serial.println("DELAY ON");
         }
         else
         {
+            digitalWrite(LED_FX2_PIN, LOW);
             Serial.println("DELAY OFF");
         }
 
@@ -142,10 +211,12 @@ void updateState()
         
         if (state & S_FLANGE)
         {
+            digitalWrite(LED_FX3_PIN, HIGH);
             Serial.println("FLANGE ON");
         }
         else
         {
+            digitalWrite(LED_FX3_PIN, LOW);
             Serial.println("FLANGE OFF");
         }
         
@@ -158,10 +229,12 @@ void updateState()
         
         if (state & S_CHORUS)
         {
+            digitalWrite(LED_FX4_PIN, HIGH);
             Serial.println("CHORUS ON");
         }
         else
         {
+            digitalWrite(LED_FX4_PIN, LOW);
             Serial.println("CHORUS OFF");
         }
         
@@ -194,14 +267,23 @@ void zeroInputs(AudioMixer4 &mixerL, AudioMixer4 &mixerR, int start, int end)
 
 void configurePins(void)
 {
+    //Potentiometers
     pinMode(GAININ_PIN, INPUT_PULLDOWN);
     pinMode(FILTER_PIN, INPUT_PULLDOWN);
     pinMode(WET_PIN, INPUT_PULLDOWN);
     pinMode(VOL_PIN, INPUT_PULLDOWN);
+    //FX buttons
     pinMode(FX1_PIN, INPUT_PULLUP);
     pinMode(FX2_PIN, INPUT_PULLUP);
     pinMode(FX3_PIN, INPUT_PULLUP);
     pinMode(FX4_PIN, INPUT_PULLUP);
+    //LED Pins
+    pinMode(LED_FX1_PIN, OUTPUT);
+    pinMode(LED_FX2_PIN, OUTPUT);
+    pinMode(LED_FX3_PIN, OUTPUT);
+    pinMode(LED_FX4_PIN, OUTPUT);
+    pinMode(SYSTEM_LED, OUTPUT);
+    
 }
 
 void configureAudioAdaptor(void)
@@ -937,7 +1019,7 @@ void printParameters(void)
 {
     Serial.print("Gain In=");
     Serial.print(vGainIn / kGainInMax * 100.0);
-    Serial.print(", DryWet=");
+    Serial.print("%, DryWet=");
     Serial.print(vWet * 100.0);
     Serial.print("%, Volume=");
     Serial.print(vVolume / kVolumeMax * 100.0);

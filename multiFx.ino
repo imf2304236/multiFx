@@ -129,10 +129,10 @@ void loop()
 {
     if ((msec > tUpdate))
     {
-        vGainIn = (float) analogRead(A3) / (1023.0 / kGainInMax); //GAININ_PIN
-        vFilterFreq = (float) analogRead(A2) / 1023.0 * kFilterFreqMax;//FILTER_PIN
-        vWet = (float) analogRead(A1) / (1023.0); //WET_PIN
-        vVolume = (float) analogRead(A0) / (1023.0 / kVolumeMax); //VOL_PIN
+        vGainIn = (float) analogRead(GAININ_PIN) / (1023.0 / kGainInMax); //GAININ_PIN
+        vFilterFreq = (float) analogRead(FILTER_PIN) / 1023.0 * kFilterFreqMax;//FILTER_PIN
+        vWet = (float) analogRead(WET_PIN) / (1023.0); //WET_PIN
+        vVolume = (float) analogRead(VOL_PIN) / (1023.0 / kVolumeMax); //VOL_PIN
 
         setGainIn(vGainIn);
         setFilterFreq(vFilterFreq);
